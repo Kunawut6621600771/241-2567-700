@@ -1,14 +1,68 @@
 <!DOCTYPE html>
-<html lang="en>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User</title>
+    <title>User Management</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            background-image: url('https://i.pinimg.com/originals/c1/fc/9d/c1fc9d7f6ae08d56f2b84e81799790a5.gif'); /* เปลี่ยน URL ตามต้องการ */
+            background-size: cover;
+            background-repeat: no-repeat;
+            /* เพิ่ม CSS อื่นๆ สำหรับ body ตามต้องการ */
+        }
+
+        #user {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            color: white;
+            position: relative; /* เพิ่ม position relative ให้ container */
+        }
+        #user div {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative; /* เพิ่ม position relative ให้แต่ละรายการ */
+        }
+        #user div:last-child {
+            border-bottom: none;
+        }
+        #user div a, #user div button {
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            position: absolute; /* เปลี่ยน position เป็น absolute */
+            top: 5px; /* กำหนดระยะห่างจากด้านบน */
+            left: 5px; /* กำหนดระยะห่างจากด้านซ้าย */
+        }
+        #user div a {
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+        }
+        #user div button.delete {
+            background-color: #dc3545;
+            color: white;
+            margin-left: 65px;
+        }
+        #user div button:hover {
+            opacity: 0.8;
+        }
+        #user div span{
+            padding-left: 140px;
+        }
+    </style>
 </head>
 <body>
-    <a href="index.html"> Back to register </a>
-    User management page
-    <div id ="user"></div>
+    <a href="index.html" class="user-link">Back to Register</a>
+    <div id="user"></div>
     <script src="https://cdn.jsdelivr.net/npm/axios@1.6.7/dist/axios.min.js"></script>
     <script src="user.js"></script>
 </body>

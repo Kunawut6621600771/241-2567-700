@@ -1,149 +1,107 @@
 const baseurl = 'http://localhost:8000';
-let mode ='CREATE'//defualt mode
-let selectedID = ''
+let mode = 'CREATE';
+let selectedId = '';
 
 window.onload = async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
-    console.log('id',id);
-    if (id){
-        mode = 'EDIT'
-        selectedID = id
-        //1.เราจะดึงข้อมูลของ user คนนั้นออกมา
-        try{
+
+    if (id) {
+        mode = 'EDIT';
+        selectedId = id;
+        try {
             const response = await axios.get(`${baseurl}/users/${id}`);
-            console.log('response',response.data);
             const user = response.data;
-            //2.นำข้อมูลที่ดึงออกมาไปแสดงใน input form
-            let firstNameDOM = document.querySelector('input[name = firstname]')
-            let lastNameDOM = document.querySelector('input[name =lastname]');
-            let ageDOM = document.querySelector('input[name =age]');
-            let descriptionDOM = document.querySelector('textarea[name=description]');
-            firstNameDOM.value = user.firstname;
-            lastNameDOM.value = user.lastname;
-            ageDOM.value = user.age;
-            descriptionDOM.value = user.description;
+            document.querySelector('#id').value = user.id;
+            document.querySelector('#firstname').value = user.firstname;
+            document.querySelector('#lastname').value = user.lastname;
+            document.querySelector('#age').value = user.age;
+            document.querySelector('textarea[name=description]').value = user.description;
 
-        let genderDOMs = document.querySelectorAll('input[name= gender]') ;
-        let interestDOM = document.querySelectorAll('input[name=interest]') ; 
-        for (let i=0; i<genderDOMs.length; i++){
-            if (genderDOMs[i].value == user.gender){
-                genderDOMs[i].checked = true;
-            }
+            document.querySelectorAll('input[name=gender]').forEach(radio => {
+                if (radio.value === user.gender) {
+                    radio.checked = true;
+                }
+            });
+
+            document.querySelectorAll('input[name="interests[]"]').forEach(checkbox => {
+                if (user.interests.includes(checkbox.value)) {
+                    checkbox.checked = true;
+                }
+            });
+        } catch (error) {
+            console.error('Error fetching user:', error);
         }
-        
-        console.log('interest',user.interest);
-        for (let i=0; i<interestDOM.length; i++){
-            if (user.interest.includes(interestDOM[i].value)){
-                // includes = ตรวจสอบว่ามีค่านี้อยู่ใน array หรือไม่ ถ้ามี return true ถ้าไม่มี return false
-                interestDOM[i].checked = true;
-            }
-        }
-        
-            
-        }catch(error){
-            console.error('error:',error);
-        }
-        
     }
-}
+};
+
 const validateData = (userData) => {
-    let errors =[]
-
-    if (!userData.firstname){
-        errors.push('กรุณากรอกชื่อ');
-    }
-    if (!userData.lastname){
-        errors.push('กรุณากรอกนามสกุล');
-    }
-    if (!userData.age){
-        errors.push('กรุณากรอกอายุ');
-    }
-    if (!userData.gender){
-        errors.push('กรุณาเลือกเพศ');
-    }
-    if (!userData.interest){
-        errors.push('กรุณาเลือกความสนใจ');
-    }
-    if (!userData.description){
-        errors.push('กรุณากรอกข้อมูล');
-    }
+    let errors = [];
+    if (!userData.firstname.trim()) errors.push('กรุณากรอกชื่อ');
+    if (!userData.lastname.trim()) errors.push('กรุณากรอกนามสกุล');
+    if (!userData.age.trim()) errors.push('กรุณากรอกอายุ');
+    if (!userData.gender) errors.push('กรุณาเลือกเพศ');
+    if (!userData.interests || userData.interests.length === 0) errors.push('กรุณาเลือกความสนใจ');
+    if (!userData.description.trim()) errors.push('กรุณากรอกคำอธิบาย');
     return errors;
-} // data validation
+};
 
- 
-const submitData = async () => {
-    let firstNameDOM = document.querySelector('input[name = firstname]')
-    let lastNameDOM = document.querySelector('input[name =lastname]');
-    let ageDOM = document.querySelector('input[name =age]');
-    let genderDOM = document.querySelector('input[name= gender]:checked') || {};
-    let interestDOM = document.querySelectorAll('input[name=interest]:checked') || {}; //null = อ่านค่าไม่ได้ error {} = ไม่มีค่ายังอ่านได้
-    let descriptionDOM = document.querySelector('textarea[name=description]');
+const submitData = async (event) => {
+    event.preventDefault();
+    const submitButton = document.getElementById('submitButton');
+    submitButton.disabled = true;
 
-    let messageDOM = document.getElementById('message');
+    const userData = {
+        id: document.querySelector('#id').value,
+        firstname: document.querySelector('#firstname').value,
+        lastname: document.querySelector('#lastname').value,
+        age: document.querySelector('#age').value,
+        gender: document.querySelector('input[name=gender]:checked')?.value || '',
+        interests: Array.from(document.querySelectorAll('input[name="interests[]"]:checked')).map(item => item.value),
+        description: document.querySelector('textarea[name=description]').value,
+    };
 
-    try{
-    let interest='';
-    for(let i=0; i<interestDOM.length; i++){
-        interest += interestDOM[i].value;
-        if (i !=interestDOM.length-1){
-            interest += ',';
-        }
+    const errors = validateData(userData);
+    if (errors.length > 0) {
+        showErrorMessage(errors);
+        submitButton.disabled = false;
+        return;
     }
 
-    let userData = {
-        firstname: firstNameDOM.value,
-        lastname: lastNameDOM.value,
-        age: ageDOM.value,
-        gender: genderDOM.value,
-        description: descriptionDOM.value,
-        interest: interest,
-        
+    const url = mode === 'CREATE' ? `${baseurl}/users` : `${baseurl}/users/${selectedId}`;
+    const method = mode === 'CREATE' ? 'POST' : 'PUT';
+
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData),
+        });
+        const data = await response.json();
+        document.getElementById('message').innerText = mode === 'CREATE' ? '✅ สร้างผู้ใช้สำเร็จ' : '✅ แก้ไขผู้ใช้สำเร็จ';
+        clearForm();
+    } catch (error) {
+        document.getElementById('message').innerText = '❌ เกิดข้อผิดพลาด: ' + error.message;
+    } finally {
+        submitButton.disabled = false;
     }
+};
 
-    console.log('submit data',userData);
-/*
-        const errors = validateData(userData);
-        if (errors.length > 0)//มี errorเกิดขึ้นกี่ตำแหน่ง
-        {
-            throw{
-                message:'กรุณากรอกข้อมูลให้ครบถ้วน',
-                errors: errors
-            }
-        }
-            */
-        let message = 'บันทึกข้อมูลเรียบร้อยแล้ว'
-        if (mode == 'CREATE'){
-        const response =  await axios.post(`${baseurl}/users`,userData)
-        console.log('response',response.data);
-        }else{
-            const response =  await axios.put(`${baseurl}/users/${selectedID}`,userData)
-            message = 'แก้ไขข้อมูลเรียบร้อยแล้ว'
-            console.log('response',response.data);
-            window.location.href = "user.html";
-        }
-        messageDOM.innerText = message
-        messageDOM.className = 'message success';
-    }catch(error){
-        console.log('error message',error.message);
-        console.log('error',error.errors);
+const showErrorMessage = (errors) => {
+    let messageBox = document.querySelector('.message-box');
+    messageBox.innerHTML = `<p>⚠️ กรุณากรอกข้อมูลให้ครบถ้วน</p><ul>${errors.map(err => `<li>${err}</li>`).join('')}</ul>`;
+    messageBox.style.display = 'block';
+    setTimeout(() => messageBox.style.display = 'none', 5000);
+};
 
-        if (error.response){
-            console.log(error.response);
-            error.message = error.response.data.message;
-            error.errors = error.response.data.errors;
-        }  
+const clearForm = () => {
+    document.querySelector('#id').value = '';
+    document.querySelector('#firstname').value = '';
+    document.querySelector('#lastname').value = '';
+    document.querySelector('#age').value = '';
+    document.querySelector('textarea[name=description]').value = '';
+    document.querySelectorAll('input[name=gender]').forEach(radio => radio.checked = false);
+    document.querySelectorAll('input[name="interests[]"]').forEach(checkbox => checkbox.checked = false);
+};
 
-        let htmlData = '<div>'
-        htmlData += `<div>${error.message}</div>`
-        htmlData += '<ul>'
-        for (let i=0; i<error.errors.length; i++){
-                htmlData += `<li> ${error.errors[i]} </li>`
-            }
-        htmlData += '</ul>'
-        htmlData += '</div>'
-         messageDOM.innerHTML = htmlData
-         messageDOM.className = 'message danger'
-    }   
-
-}
+document.getElementById('userForm').addEventListener('submit', submitData);
